@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storyteller</title>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #007aff;
+            --secondary-color: #f4f7f6;
+            --text-color: #333;
+            --light-text-color: #666;
+            --card-bg: #fff;
+            --card-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(to right bottom, #e0f2f7, #c1e7f0); /* Light blue gradient */
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        #app-container {
+            width: 90%;
+            max-width: 1000px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-family: 'Merriweather', serif;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+        }
+
+        /* Bookshelf View */
+        #bookshelf-view {
+            display: none; /* Hidden by default */
+        }
+
+        #bookshelf {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1.5rem;
+            padding: 1.5rem 0;
+            margin-top: 1.5rem;
+            border-top: 1px solid #eee;
+        }
+
+        .book-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            text-align: left;
+            overflow: hidden; /* For cover image */
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        }
+
+        .book-card img {
+            width: 100%;
+            height: 200px; /* Fixed height for covers */
+            object-fit: cover; /* Ensures image covers area without distortion */
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .book-card h3 {
+            font-family: 'Merriweather', serif;
+            font-size: 1.15rem;
+            color: var(--primary-color);
+            margin: 0 0 0.25rem 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .book-card p {
+            font-size: 0.9rem;
+            color: var(--light-text-color);
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+
+        /* Reader View */
+        #reader-view {
+            display: none; /* Hidden by default */
+            text-align: left;
+            margin-top: 1.5rem;
+        }
+
+        #reader-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 1rem;
+        }
+
+        #back-to-shelf {
+            background: #6c757d; /* Grey back button */
+            margin-right: 1rem;
+        }
+        #back-to-shelf:hover {
+            background: #5a6268;
+        }
+
+        #book-title-display {
+            font-family: 'Merriweather', serif;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            flex-grow: 1; /* Allows title to take available space */
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #page-text {
+            font-family: 'Merriweather', serif;
+            font-size: 1.3rem;
+            line-height: 1.8;
+            min-height: 180px; /* Increased min-height */
+            color: var(--text-color);
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #fafafa;
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        #reader-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-top: 1px solid #eee;
+        }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+            box-shadow: none;
+        }
+        button:hover:not(:disabled) {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        #read-btn.reading {
+            background: #e53935; /* Red color when playing */
+        }
+        #read-btn.reading:hover {
+            background: #c62828;
+        }
+
+        #page-number-display {
+            font-size: 1.1rem;
+            color: var(--light-text-color);
+            font-weight: 600;
+        }
+
+        audio {
+            display: none; /* Hide the default audio player */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #app-container {
+                padding: 1.5rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            #bookshelf {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+            .book-card img {
+                height: 160px;
+            }
+            .book-card h3 {
+                font-size: 1rem;
+            }
+            #book-title-display {
+                font-size: 1.5rem;
+            }
+            #page-text {
+                font-size: 1.1rem;
+                min-height: 120px;
+            }
+            button {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #app-container {
+                padding: 1rem;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            #bookshelf {
+                grid-template-columns: 1fr 1fr; /* Two columns on very small screens */
+                gap: 1rem;
+            }
+            #reader-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.8rem;
+            }
+            #page-number-display {
+                width: 100%;
+                text-align: center;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <h1>AI Storybook Reader</h1>
+
+    <div id="bookshelf-view">
+        <h2>Choose Your Adventure!</h2>
+        <div id="bookshelf">
+        </div>
+    </div>
+
+    <div id="reader-view">
+        <div id="reader-header">
+            <button id="back-to-shelf">← Back to Shelf</button>
+            <h2 id="book-title-display"></h2>
+        </div>
+        <p id="page-text">Loading...</p>
+        <div id="reader-controls">
+            <button id="prev-btn" disabled>Previous</button>
+            <button id="read-btn">Read Aloud</button>
+            <span id="page-number-display">Page 1</span>
+            <button id="next-btn">Next</button>
+        </div>
+        <audio id="audio-player"></audio>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Global State ---
+        let currentBookId = null;
+        let currentPage = 0;
+        let currentText = "";
+        let allStories = []; // To store metadata of all books
+
+        // --- HTML Elements ---
+        const appContainer = document.getElementById('app-container');
+        const bookshelfView = document.getElementById('bookshelf-view');
+        const readerView = document.getElementById('reader-view');
+        const bookshelfDiv = document.getElementById('bookshelf');
+
+        const backToShelfBtn = document.getElementById('back-to-shelf');
+        const bookTitleDisplay = document.getElementById('book-title-display');
+        const pageText = document.getElementById('page-text');
+        const pageNumDisplay = document.getElementById('page-number-display');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const readBtn = document.getElementById('read-btn');
+        const audioPlayer = document.getElementById('audio-player');
+
+        // --- View Management ---
+        function showView(viewId) {
+            bookshelfView.style.display = 'none';
+            readerView.style.display = 'none';
+            if (viewId === 'bookshelf') {
+                bookshelfView.style.display = 'block';
+            } else if (viewId === 'reader') {
+                readerView.style.display = 'block';
+            }
+        }
+
+        // --- Bookshelf Functions ---
+        async function loadBookshelf() {
+            try {
+                const response = await fetch('/get_all_stories');
+                if (!response.ok) throw new Error('Failed to fetch stories.');
+                const data = await response.json();
+                allStories = data.stories;
+                renderBookshelf(allStories);
+                showView('bookshelf');
+            } catch (error) {
+                console.error('Error loading bookshelf:', error);
+                bookshelfDiv.innerHTML = '<p style="color:red;">Failed to load stories. Please try again later.</p>';
+                showView('bookshelf'); // Still show bookshelf view but with error
+            }
+        }
+
+        function renderBookshelf(stories) {
+            bookshelfDiv.innerHTML = ''; // Clear existing books
+            stories.forEach(story => {
+                const card = document.createElement('div');
+                card.className = 'book-card';
+                card.dataset.storyId = story.id;
+                card.innerHTML = `
+                    <img src="${story.cover_image}" alt="Cover of ${story.title}">
+                    <h3>${story.title}</h3>
+                    <p>By ${story.author}</p>
+                `;
+                card.addEventListener('click', () => selectBook(story.id, story.title));
+                bookshelfDiv.appendChild(card);
+            });
+        }
+
+        function selectBook(storyId, title) {
+            currentBookId = storyId;
+            currentPage = 0; // Always start from page 0 for a new book
+            bookTitleDisplay.textContent = title;
+            fetchPage(currentPage);
+            showView('reader');
+        }
+
+        // --- Reader Functions ---
+        async function fetchPage(page) {
+            setLoadingState(true);
+            audioPlayer.pause(); // Stop any current audio
+            audioPlayer.src = ''; // Clear audio source
+
+            try {
+                const response = await fetch('/get_page_content', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ storyId: currentBookId, page: page })
+                });
+
+                if (!response.ok) {
+                    // This indicates end of story or invalid page
+                    if (page > currentPage && currentBookId) { // If trying to go past last page
+                         currentPage = page - 1; // Revert to last valid page
+                    }
+                    updateNavButtons(); // Update buttons to reflect state
+                    return;
+                }
+
+                const data = await response.json();
+                currentText = data.text;
+                pageText.textContent = currentText;
+                currentPage = page;
+
+                updateNavButtons();
+
+            } catch (error) {
+                console.error('Error fetching page:', error);
+                pageText.textContent = 'Error loading page.';
+                updateNavButtons();
+            } finally {
+                setLoadingState(false);
+            }
+        }
+
+        async function fetchAudio() {
+            if (!currentText || readBtn.disabled) return;
+
+            readBtn.disabled = true;
+            readBtn.textContent = 'Generating...';
+            readBtn.classList.add('reading');
+
+            try {
+                const response = await fetch('/generate_audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: currentText })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.statusText}`);
+                }
+
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+
+                audioPlayer.src = audioUrl;
+                audioPlayer.play();
+
+                readBtn.textContent = 'Playing...';
+
+            } catch (error) {
+                console.error('Error generating audio:', error);
+                resetReadButton();
+            }
+        }
+
+        async function updateNavButtons() {
+            pageNumDisplay.textContent = `Page ${currentPage + 1}`;
+            prevBtn.disabled = (currentPage === 0);
+
+            // Check if there's a next page
+            try {
+                const nextResponse = await fetch('/get_page_content', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ storyId: currentBookId, page: currentPage + 1 })
+                });
+                nextBtn.disabled = !nextResponse.ok;
+            } catch (e) {
+                nextBtn.disabled = true;
+            }
+        }
+
+        function resetReadButton() {
+            readBtn.disabled = false;
+            readBtn.textContent = 'Read Aloud';
+            readBtn.classList.remove('reading');
+        }
+
+        function setLoadingState(isLoading) {
+            readBtn.disabled = isLoading;
+            prevBtn.disabled = isLoading || currentPage === 0;
+            nextBtn.disabled = isLoading;
+
+            if (isLoading) {
+                pageText.textContent = 'Loading...';
+                readBtn.textContent = 'Loading...';
+            } else {
+                resetReadButton();
+            }
+        }
+
+        // --- Event Listeners ---
+        backToShelfBtn.addEventListener('click', () => {
+            audioPlayer.pause();
+            currentBookId = null; // Clear selected book
+            showView('bookshelf');
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 0) {
+                fetchPage(currentPage - 1);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            fetchPage(currentPage + 1);
+        });
+
+        readBtn.addEventListener('click', fetchAudio);
+
+        audioPlayer.onended = () => {
+            resetReadButton();
+        };
+
+        // --- Initial Load ---
+        loadBookshelf(); // Start by showing the bookshelf
+    });
+</script>
+</body>
+</html>
